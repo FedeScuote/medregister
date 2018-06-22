@@ -1,0 +1,77 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * Sample access control list.
+ */
+rule OnlyDoctorsCanSubmitRegistries {
+  description: "Only Allow Doctors to submit Regs"
+  participant(doc): "medreg.Doctor"
+  operation: CREATE
+  resource(registry): "medreg.MedicalRegistry"
+  transaction(tx): "medreg.CreateMedicalRegistry"
+  condition: (doc.getIdentifier() === tx.doctor.getIdentifier())
+  action: ALLOW
+}
+
+rule OnlyAdminCanCreateDoctor {
+  description: "Only Allow Admins to create Doctors"
+  participant(admin): "medreg.HospitalAdministrator"
+  operation: CREATE, READ
+  resource(doc): "medreg.Doctor"
+  condition: (admin.division === doc.division)
+  action: ALLOW
+}
+
+rule PacientCanOnlySeeHisRecords {
+  description: "Patient can only see his own records"
+  participant(patient): "medreg.Patient"
+  operation: READ
+  resource(registry): "medreg.MedicalRegistry"
+  condition: (registry.patient.getIdentifier() == patient.getIdentifier())
+  action: ALLOW
+}
+
+rule DoctorCanOnlySeeHisRecords {
+  description: "Doctors can only see records he created"
+  participant(doc): "medreg.Doctor"
+  operation: READ
+  resource(registry): "medreg.MedicalRegistry"
+  condition: (registry.doctor.getIdentifier() == doc.getIdentifier())
+  action: ALLOW
+}
+
+rule SystemACL {
+  description:  "System ACL to permit all access"
+  participant: "org.hyperledger.composer.system.Participant"
+  operation: ALL
+  resource: "org.hyperledger.composer.system.**"
+  action: ALLOW
+}
+
+rule NetworkAdminUser {
+    description: "Grant business network administrators full access to user resources"
+    participant: "org.hyperledger.composer.system.NetworkAdmin"
+    operation: ALL
+    resource: "**"
+    action: ALLOW
+}
+
+rule NetworkAdminSystem {
+    description: "Grant business network administrators full access to system resources"
+    participant: "org.hyperledger.composer.system.NetworkAdmin"
+    operation: ALL
+    resource: "org.hyperledger.composer.system.**"
+    action: ALLOW
+}
